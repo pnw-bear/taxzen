@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:4000"; // Change to Railway URL when deployed
+const API_URL = "https://taxzen-backend-production.up.railway.app/"
 
 export async function uploadFile(file) {
     const formData = new FormData();
