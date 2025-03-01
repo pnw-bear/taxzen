@@ -2,13 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
-const { Configuration, OpenAIApi } = require("openai"); // ✅ Ensure OpenAI is imported
+const OpenAI = require("openai"); // ✅ Corrected OpenAI Import
 require("dotenv").config();
 
 const app = express();
 app.use(cors({ origin: "*" })); // Allow all origins for deployment
-app.use(express.json()); // ✅ Ensure Express parses JSON requests
-app.use(express.urlencoded({ extended: true })); // ✅ Ensure form data is parsed
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ Debugging: Log environment variables (DO NOT expose secrets in production)
 console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "✅ Loaded" : "❌ MISSING");
@@ -17,7 +17,7 @@ console.log("SUPABASE_KEY:", process.env.SUPABASE_KEY ? "✅ Loaded" : "❌ MISS
 // ✅ Ensure Supabase environment variables are set
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
     console.error("❌ ERROR: Missing Supabase environment variables!");
-    process.exit(1); // Stop the server if env vars are missing
+    process.exit(1);
 }
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -28,7 +28,10 @@ if (!process.env.OPENAI_API_KEY) {
     process.exit(1);
 }
 
-const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY })); // ✅ Initialize OpenAI API
+// ✅ Correct OpenAI API Initialization
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 // ✅ Configure Multer for File Uploads
 const storage = multer.memoryStorage();
@@ -42,7 +45,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         const fileExt = req.file.originalname.split('.').pop(); // Get file extension
         const filePath = `uploads/${Date.now()}.${fileExt}`; // Unique filename
 
-        console.log("Uploading file:", filePath); // Debugging log
+        console.log("Uploading file:", filePath);
 
         // ✅ Upload file to Supabase Storage
         const { data, error } = await supabase.storage
@@ -81,18 +84,18 @@ app.post("/analyze-tax", async (req, res) => {
         - Stock Sales: ${stockSales}
         Provide estimated taxable income and tax-saving strategies.`;
 
-        const response = await openai.createCompletion({
+        const response = await openai.chat.completions.create({
             model: "gpt-4",
-            prompt,
+            messages: [{ role: "system", content: prompt }],
             max_tokens: 200,
         });
 
-        if (!response || !response.data || !response.data.choices) {
+        if (!response || !response.choices || !response.choices.length) {
             console.error("❌ ERROR: OpenAI API response malformed", response);
             return res.status(500).json({ error: "Failed to process AI insights." });
         }
 
-        res.json({ analysis: response.data.choices[0].text });
+        res.json({ analysis: response.choices[0].message.content });
 
     } catch (err) {
         console.error("❌ AI Processing Error:", err);
