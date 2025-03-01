@@ -84,11 +84,14 @@ app.post("/analyze-tax", async (req, res) => {
         - Stock Sales: ${stockSales}
         Provide estimated taxable income and tax-saving strategies.`;
 
+        const modelToUse = process.env.OPENAI_MODEL || "gpt-4"; // Use GPT-4 or fallback to GPT-3.5
+
         const response = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: modelToUse,
             messages: [{ role: "system", content: prompt }],
             max_tokens: 200,
         });
+
 
         if (!response || !response.choices || !response.choices.length) {
             console.error("❌ ERROR: OpenAI API response malformed", response);
