@@ -9,6 +9,9 @@ app.use(cors({ origin: "http://localhost:3000" }));
 
 // ✅ Connect to Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    throw new Error("❌ Missing Supabase environment variables!");
+}
 
 // ✅ Configure Multer for File Uploads
 const storage = multer.memoryStorage();
