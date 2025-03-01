@@ -2,10 +2,13 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const { createClient } = require("@supabase/supabase-js");
+const { Configuration, OpenAIApi } = require("openai"); // ✅ Ensure OpenAI is imported
 require("dotenv").config();
 
 const app = express();
 app.use(cors({ origin: "*" })); // Allow all origins for deployment
+app.use(express.json()); // ✅ Ensure Express parses JSON requests
+app.use(express.urlencoded({ extended: true })); // ✅ Ensure form data is parsed
 
 // ✅ Debugging: Log environment variables (DO NOT expose secrets in production)
 console.log("SUPABASE_URL:", process.env.SUPABASE_URL ? "✅ Loaded" : "❌ MISSING");
@@ -18,6 +21,14 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
 }
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// ✅ Ensure OpenAI API Key is set
+if (!process.env.OPENAI_API_KEY) {
+    console.error("❌ ERROR: Missing OpenAI API Key!");
+    process.exit(1);
+}
+
+const openai = new OpenAIApi(new Configuration({ apiKey: process.env.OPENAI_API_KEY })); // ✅ Initialize OpenAI API
 
 // ✅ Configure Multer for File Uploads
 const storage = multer.memoryStorage();
@@ -53,24 +64,15 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     }
 });
 
-// ✅ Test API Route
-app.get("/", (req, res) => {
-    res.json({ message: "✅ Backend is working!" });
-});
-
+// ✅ AI Tax Analysis API Endpoint
 app.post("/analyze-tax", async (req, res) => {
     try {
+        console.log("Incoming request body:", req.body); // Debugging log
+
         const { income, deductions, stockSales } = req.body;
 
-        // Ensure input data is valid
         if (!income || !deductions || !stockSales) {
             return res.status(400).json({ error: "Missing required tax data." });
-        }
-
-        // ✅ Debugging: Check if OpenAI API Key is available
-        if (!process.env.OPENAI_API_KEY) {
-            console.error("❌ ERROR: Missing OpenAI API Key!");
-            return res.status(500).json({ error: "OpenAI API Key is missing in backend." });
         }
 
         const prompt = `Analyze this tax data:
@@ -98,9 +100,11 @@ app.post("/analyze-tax", async (req, res) => {
     }
 });
 
-
+// ✅ Test API Route
+app.get("/", (req, res) => {
+    res.json({ message: "✅ Backend is working!" });
+});
 
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`🚀 Backend running on http://localhost:${PORT}`));
-
