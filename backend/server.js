@@ -58,6 +58,37 @@ app.get("/", (req, res) => {
     res.json({ message: "✅ Backend is working!" });
 });
 
+app.post("/analyze-tax", async (req, res) => {
+    try {
+        const { income, deductions, stockSales } = req.body;
+
+        // Ensure input data is valid
+        if (!income || !deductions || !stockSales) {
+            return res.status(400).json({ error: "Missing required tax data." });
+        }
+
+        const prompt = `Analyze this tax data:
+        - Income: ${income}
+        - Deductions: ${deductions}
+        - Stock Sales: ${stockSales}
+        Provide estimated taxable income and tax-saving strategies.`;
+
+        const response = await openai.createCompletion({
+            model: "gpt-4",
+            prompt,
+            max_tokens: 200,
+        });
+
+        res.json({ analysis: response.data.choices[0].text });
+
+    } catch (err) {
+        console.error("❌ AI Processing Error:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+
 // ✅ Start Server
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`🚀 Backend running on http://localhost:${PORT}`));
+
