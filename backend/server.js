@@ -92,15 +92,22 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
             return value; // Keep text values unchanged
         };
 
-        // Recursive function to apply formatting across all fields
+        // Recursive function to clean and prepare response data
         const formatResponseData = (obj) => {
             if (!obj || typeof obj !== "object") return;
 
             for (let key in obj) {
                 if (typeof obj[key] === "object") {
-                    formatResponseData(obj[key]); // Recursively format objects
-                } else if (!isNaN(parseFloat(obj[key])) && isFinite(obj[key])) {
-                    obj[key] = `$${parseFloat(obj[key]).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+                    formatResponseData(obj[key]); // Recursively process nested objects
+                } else {
+                    // Convert numeric strings to numbers, but keep "N/A" as-is
+                    if (!isNaN(parseFloat(obj[key])) && obj[key] !== "N/A") {
+                        obj[key] = parseFloat(obj[key]); // Convert to number (without $ or commas)
+                    } else if (obj[key] === "N/A") {
+                        obj[key] = "N/A"; // Keep "N/A" text unchanged
+                    } else if (!obj[key]) {
+                        obj[key] = 0.00; // Default missing values to 0.00
+                    }
                 }
             }
         };
@@ -121,8 +128,9 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
                 return res.status(500).json({ error: "Failed to parse AI response" });
             }
 
-            formatResponseData(jsonResponse);
-            res.json(jsonResponse);
+            formatResponseData(jsonResponse); // Clean data
+            res.json(jsonResponse); // Send clean JSON response
+
         } catch (err) {
             console.error("❌ AI Processing Error:", err);
             res.status(500).json({ error: "Internal server error: " + err.message });

@@ -12,6 +12,13 @@ export default function Home() {
         setFiles([...e.target.files]);
     };
 
+    const formatCurrency = (value) => {
+        if (typeof value === "number") {
+            return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+        }
+        return value; // Keep text (like "N/A") unchanged
+    };
+
     const handleUploadAndProcess = async () => {
         if (files.length === 0) return alert("Please select files");
 
@@ -42,41 +49,38 @@ export default function Home() {
             {taxInsights && (
                 <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
                     <h2 className="text-xl font-bold text-gray-800">Tax Summary</h2>
-                    <p className="text-gray-700 font-semibold">💰 <strong>Total Taxable Income:</strong> <span className="text-blue-600">{taxInsights.total_taxable_income}</span></p>
-                    <p className="text-gray-700 font-semibold">⚠️ <strong>Estimated Tax Owed:</strong> <span className="text-red-600">{taxInsights.estimated_tax_owed}</span></p>
+                    <p className="text-gray-700 font-semibold">💰 <strong>Total Taxable Income:</strong>
+                        <span className="text-blue-600">{formatCurrency(taxInsights.total_taxable_income)}</span>
+                    </p>
 
-                    <h3 className="text-lg font-bold text-gray-800 mt-4">📌 Top Tax-Saving Strategies</h3>
+                    <p className="text-gray-700 font-semibold">⚠️ <strong>Estimated Tax Owed:</strong>
+                        <span className="text-red-600">{formatCurrency(taxInsights.estimated_tax_owed)}</span>
+                    </p>
+
                     <ul className="list-disc pl-5 text-gray-700">
-                        {taxInsights.top_recommendations.map((rec, index) => (
+                        {Object.entries(taxInsights.detailed_breakdown.income_sources).map(([key, value], index) => (
                             <li key={index}>
-                                <strong>{rec.strategy}:</strong> {rec.impact}
-                            </li>
+                                <strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> {formatCurrency(value)}</li>
                         ))}
                     </ul>
 
-                    <h3 className="text-lg font-bold text-gray-800 mt-4">📂 Detailed Breakdown</h3>
-                    <div className="space-y-2">
-                        <p><strong>💼 Income Sources:</strong></p>
-                        <ul className="list-disc pl-5 text-gray-700">
-                            {Object.entries(taxInsights.detailed_breakdown.income_sources).map(([key, value], index) => (
-                                <li key={index}><strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
-                            ))}
-                        </ul>
-                        <p><strong>📉 Deductions:</strong></p>
-                        <ul className="list-disc pl-5 text-gray-700">
-                            {Object.entries(taxInsights.detailed_breakdown.deductions).map(([key, value], index) => (
-                                <li key={index}><strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
-                            ))}
-                        </ul>
-                        <p><strong>🎁 Credits:</strong></p>
-                        <ul className="list-disc pl-5 text-gray-700">
-                            {Object.entries(taxInsights.detailed_breakdown.credits).map(([key, value], index) => (
-                                <li key={index}><strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
-                            ))}
-                        </ul>
-                    </div>
+                    <ul className="list-disc pl-5 text-gray-700">
+                        {Object.entries(taxInsights.detailed_breakdown.deductions).map(([key, value], index) => (
+                            <li key={index}>
+                                <strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> {formatCurrency(value)}</li>
+                        ))}
+                    </ul>
+
+                    <ul className="list-disc pl-5 text-gray-700">
+                        {Object.entries(taxInsights.detailed_breakdown.credits).map(([key, value], index) => (
+                            <li key={index}>
+                                <strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> {formatCurrency(value)}</li>
+                        ))}
+                    </ul>
                 </div>
-            )}
-        </div>
-    );
+                </div>
+                )}
+</div>
+)
+;
 }
