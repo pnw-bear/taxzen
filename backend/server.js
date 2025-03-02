@@ -79,11 +79,12 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
         const response = await openai.chat.completions.create({
             model: "gpt-4",
             messages: [{ role: "system", content: prompt }],
-            max_tokens: 500,
-            response_format: { type: "json_object" }, // ✅ Corrected format
+            max_tokens: 500
         });
 
-        res.json(JSON.parse(response.choices[0].message.content));
+        // ✅ Ensure response is formatted as JSON manually
+        const jsonResponse = JSON.parse(response.choices[0].message.content);
+        res.json(jsonResponse);
 
     } catch (err) {
         console.error("❌ Processing Error:", err);
