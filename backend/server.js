@@ -82,12 +82,14 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
             max_tokens: 500
         });
 
-        // ✅ Ensure response is formatted as JSON manually
-        const jsonResponse = JSON.parse(response.choices[0].message.content);
-
         const formatCurrency = (value) => {
-            if (isNaN(value) || value === "not provided") return "$0.00"; // Handle missing values
-            return `$${parseFloat(value).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+            if (typeof value === "number") {
+                return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+            }
+            if (!isNaN(parseFloat(value))) {
+                return `$${parseFloat(value).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+            }
+            return value; // Keep text values unchanged
         };
 
         // Recursive function to apply formatting across all fields
@@ -95,15 +97,17 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
             for (let key in obj) {
                 if (typeof obj[key] === "object") {
                     formatResponseData(obj[key]); // Recursively format nested objects
-                } else {
-                    obj[key] = formatCurrency(obj[key]); // Format numbers
+                } else if (!isNaN(parseFloat(obj[key])) && isFinite(obj[key])) {
+                    obj[key] = formatCurrency(parseFloat(obj[key])); // Apply formatting only to numbers
                 }
             }
         };
 
 
-        formatResponseData(jsonResponse);
+        const jsonResponse = JSON.parse(response.choices[0].message.content);
+        formatResponseData(jsonResponse); // Apply formatting to numerical values only
         res.json(jsonResponse);
+
 
     } catch (err) {
         console.error("❌ Processing Error:", err);
