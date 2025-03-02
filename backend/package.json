@@ -20,7 +20,7 @@
     "openai": "^4.86.1",
     "pdf-parse": "^1.1.1",
     "tesseract.js": "^6.0.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.1/xlsx-0.20.1.tgz"
+    "xlsx": "^0.18.5"
 
   },
   "description": ""
