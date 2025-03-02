@@ -94,19 +94,40 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
 
         // Recursive function to apply formatting across all fields
         const formatResponseData = (obj) => {
+            if (!obj || typeof obj !== "object") return;
+
             for (let key in obj) {
                 if (typeof obj[key] === "object") {
-                    formatResponseData(obj[key]); // Recursively format nested objects
+                    formatResponseData(obj[key]); // Recursively format objects
                 } else if (!isNaN(parseFloat(obj[key])) && isFinite(obj[key])) {
-                    obj[key] = formatCurrency(parseFloat(obj[key])); // Apply formatting only to numbers
+                    obj[key] = `$${parseFloat(obj[key]).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
                 }
             }
         };
 
+        try {
+            const openAIResponse = response.choices[0].message.content;
+            console.log("🔍 OpenAI Raw Response:", openAIResponse); // Debugging Log
 
-        const jsonResponse = JSON.parse(response.choices[0].message.content);
-        formatResponseData(jsonResponse); // Apply formatting to numerical values only
-        res.json(jsonResponse);
+            if (!openAIResponse) {
+                throw new Error("OpenAI response is empty or undefined.");
+            }
+
+            let jsonResponse;
+            try {
+                jsonResponse = JSON.parse(openAIResponse);
+            } catch (parseErr) {
+                console.error("❌ JSON Parse Error:", parseErr);
+                return res.status(500).json({ error: "Failed to parse AI response" });
+            }
+
+            formatResponseData(jsonResponse);
+            res.json(jsonResponse);
+        } catch (err) {
+            console.error("❌ AI Processing Error:", err);
+            res.status(500).json({ error: "Internal server error: " + err.message });
+        }
+
 
 
     } catch (err) {
