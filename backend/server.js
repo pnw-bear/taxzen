@@ -84,6 +84,19 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
 
         // ✅ Ensure response is formatted as JSON manually
         const jsonResponse = JSON.parse(response.choices[0].message.content);
+
+        // Convert all monetary values to numbers (removes extra symbols)
+        const formatNumbers = (obj) => {
+            for (let key in obj) {
+                if (typeof obj[key] === "object") {
+                    formatNumbers(obj[key]); // Recursively clean nested objects
+                } else if (typeof obj[key] === "string" && obj[key].startsWith("$")) {
+                    obj[key] = parseFloat(obj[key].replace(/[$,]/g, "")); // Remove $ and format
+                }
+            }
+        };
+
+        formatNumbers(jsonResponse);
         res.json(jsonResponse);
 
     } catch (err) {
