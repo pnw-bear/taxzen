@@ -1,49 +1,82 @@
 "use client";
 
 import { useState } from "react";
-import { uploadFile, analyzeTax } from "../utils/api";
+import { processTaxDocs } from "../utils/api";
 
 export default function Home() {
-    const [file, setFile] = useState(null);
-    const [uploadStatus, setUploadStatus] = useState("");
-    const [analysis, setAnalysis] = useState("");
+    const [files, setFiles] = useState([]);
+    const [processingStatus, setProcessingStatus] = useState("");
+    const [taxInsights, setTaxInsights] = useState(null);
 
-    // Handle file selection
-    const handleFileChange = (e) => setFile(e.target.files[0]);
+    const handleFileChange = (e) => {
+        setFiles([...e.target.files]);
+    };
 
-    // Upload file and trigger AI tax analysis
-    const handleUploadAndAnalyze = async () => {
-        if (!file) return alert("Please select a file");
+    const handleUploadAndProcess = async () => {
+        if (files.length === 0) return alert("Please select files");
 
-        // ✅ Step 1: Upload the file
-        setUploadStatus("Uploading...");
-        const uploadResult = await uploadFile(file);
+        setProcessingStatus("Processing tax documents...");
 
-        if (uploadResult.error) {
-            setUploadStatus("Upload failed: " + uploadResult.error);
-            return;
-        }
-        setUploadStatus("✅ File uploaded successfully!");
+        const result = await processTaxDocs(files);
 
-        // ✅ Step 2: Process the tax document using AI
-        setAnalysis("Processing tax insights...");
-        const taxData = { income: "100000", deductions: "20000", stockSales: "5000" }; // This should be extracted from the uploaded file in a future enhancement
-        const analysisResult = await analyzeTax(taxData);
-
-        if (analysisResult.error) {
-            setAnalysis("Analysis failed: " + analysisResult.error);
+        if (result.error) {
+            setProcessingStatus("❌ Error: " + result.error);
         } else {
-            setAnalysis(analysisResult.analysis || "No insights generated.");
+            setProcessingStatus("✅ Analysis Complete!");
+            setTaxInsights(result);
         }
     };
 
     return (
-        <div>
-            <h1>Welcome to TaxZen</h1>
-            <input type="file" onChange={handleFileChange} />
-            <button onClick={handleUploadAndAnalyze}>Upload & Analyze</button>
-            <p>Upload Status: {uploadStatus}</p>
-            <p>AI Tax Insights: {analysis}</p>
+        <div className="p-6 max-w-4xl mx-auto space-y-6 bg-gray-100 text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-800">📊 TaxZen: Smart Tax Analysis</h1>
+            <input type="file" multiple onChange={handleFileChange} className="border border-gray-300 rounded-md p-2 w-full" />
+            <button
+                onClick={handleUploadAndProcess}
+                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                Upload & Analyze
+            </button>
+            <p className="text-gray-700">{processingStatus}</p>
+
+            {/* ✅ Render structured tax insights */}
+            {taxInsights && (
+                <div className="bg-white shadow-md rounded-lg p-6 space-y-4">
+                    <h2 className="text-xl font-bold text-gray-800">Tax Summary</h2>
+                    <p className="text-gray-700 font-semibold">💰 <strong>Total Taxable Income:</strong> <span className="text-blue-600">${taxInsights.total_taxable_income}</span></p>
+                    <p className="text-gray-700 font-semibold">⚠️ <strong>Estimated Tax Owed:</strong> <span className="text-red-600">${taxInsights.estimated_tax_owed}</span></p>
+
+                    <h3 className="text-lg font-bold text-gray-800 mt-4">📌 Top Tax-Saving Strategies</h3>
+                    <ul className="list-disc pl-5 text-gray-700">
+                        {taxInsights.top_recommendations.map((rec, index) => (
+                            <li key={index}>
+                                <strong>{rec.strategy}:</strong> {rec.impact}
+                            </li>
+                        ))}
+                    </ul>
+
+                    <h3 className="text-lg font-bold text-gray-800 mt-4">📂 Detailed Breakdown</h3>
+                    <div className="space-y-2">
+                        <p><strong>💼 Income Sources:</strong></p>
+                        <ul className="list-disc pl-5 text-gray-700">
+                            {Object.entries(taxInsights.detailed_breakdown.income_sources).map(([key, value], index) => (
+                                <li key={index}><strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
+                            ))}
+                        </ul>
+                        <p><strong>📉 Deductions:</strong></p>
+                        <ul className="list-disc pl-5 text-gray-700">
+                            {Object.entries(taxInsights.detailed_breakdown.deductions).map(([key, value], index) => (
+                                <li key={index}><strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
+                            ))}
+                        </ul>
+                        <p><strong>🎁 Credits:</strong></p>
+                        <ul className="list-disc pl-5 text-gray-700">
+                            {Object.entries(taxInsights.detailed_breakdown.credits).map(([key, value], index) => (
+                                <li key={index}><strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
