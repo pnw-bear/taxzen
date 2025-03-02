@@ -77,10 +77,10 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
         Return only JSON, no additional text.`;
 
         const response = await openai.chat.completions.create({
-            model: process.env.OPENAI_MODEL || "gpt-4",
+            model: "gpt-4",
             messages: [{ role: "system", content: prompt }],
-            max_tokens: 700,
-            response_format: "json"
+            max_tokens: 500,
+            response_format: { type: "json" }, // ✅ Corrected
         });
 
         res.json(JSON.parse(response.choices[0].message.content));
@@ -96,11 +96,11 @@ const parseCSV = async (buffer) => {
     return new Promise((resolve, reject) => {
         const results = [];
         const readableStream = new stream.Readable();
-        readableStream.push(buffer);
+        readableStream.push(buffer.toString("utf-8")); // ✅ Ensure UTF-8 encoding
         readableStream.push(null);
 
         readableStream
-            .pipe(csvParser())
+            .pipe(csvParser({ headers: true })) // ✅ Force CSV headers
             .on("data", (data) => results.push(data))
             .on("end", () => resolve(results))
             .on("error", (err) => reject(err));
