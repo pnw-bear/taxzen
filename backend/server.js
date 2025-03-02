@@ -80,7 +80,7 @@ app.post("/process-tax-docs", upload.array("files"), async (req, res) => {
             model: "gpt-4",
             messages: [{ role: "system", content: prompt }],
             max_tokens: 500,
-            response_format: "json_object", // ✅ Corrected format
+            response_format: { type: "json_object" }, // ✅ Corrected format
         });
 
         res.json(JSON.parse(response.choices[0].message.content));
