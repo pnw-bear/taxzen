@@ -69,6 +69,30 @@ export default function Home() {
                                     <li key={index}><strong>{rec.strategy}:</strong> {formatCurrency(rec.impact)}</li>
                                 ))}
                             </ul>
+                            <h3 className="text-lg font-bold text-gray-800 mt-4">📂 Detailed Breakdown</h3>
+                            <div className="space-y-2">
+                                <p><strong>💼 Income Sources:</strong></p>
+                                <ul className="list-disc pl-5 text-gray-700">
+                                    {Object.entries(taxInsights.detailed_breakdown.income_sources).map(([key, value], index) => (
+                                        <li key={index}>
+                                            <strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
+                                    ))}
+                                </ul>
+                                <p><strong>📉 Deductions:</strong></p>
+                                <ul className="list-disc pl-5 text-gray-700">
+                                    {Object.entries(taxInsights.detailed_breakdown.deductions).map(([key, value], index) => (
+                                        <li key={index}>
+                                            <strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
+                                    ))}
+                                </ul>
+                                <p><strong>🎁 Credits:</strong></p>
+                                <ul className="list-disc pl-5 text-gray-700">
+                                    {Object.entries(taxInsights.detailed_breakdown.credits).map(([key, value], index) => (
+                                        <li key={index}>
+                                            <strong>{key.replace(/_/g, " ").toUpperCase()}:</strong> ${value}</li>
+                                    ))}
+                                </ul>
+                            </div>
                         </>
                     )}
                 </div>
